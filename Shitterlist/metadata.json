@@ -1,0 +1,10 @@
+{
+    "name": "Shitterlist",
+    "version": "2.3.0",
+    "description": "Automatische Shitter-Liste mit API & Auto-Updater",
+    "creator": "Justin",
+    "entry": "index.js",
+    "requires": ["Vigilance"],
+    "repository": "https://github.com/cOnfusi0n1/Shitterlist",
+    "license": "MIT"
+}

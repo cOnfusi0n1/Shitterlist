@@ -1,0 +1,84 @@
+
+[general]
+	kompakte_nachrichten = false
+	zeitstempel_anzeigen = false
+	prefix_anzeigen = true
+	debug_modus = false
+	"maximale_listengröße" = 500
+	allgemeine_nachrichten = true
+	aktiviert = true
+
+[webhook]
+	webhook_aktiv = true
+	webhook_remove_events = true
+	"webhook_url_(override)" = ""
+	webhook_add_events = true
+	webhook_detection_events = true
+
+[sounds]
+	"join_sound_lautstärke" = 100
+	"spieler_hinzugefügt" = ""
+	custom_join_sound_aktivieren = true
+	erfolg_sound = "fart.ogg"
+	master_pitch = 100
+	custom_join_sound_event = "fart.ogg"
+	join_sound_pitch = 100
+	"fallback/gn" = "fart.ogg"
+	master_volume = 100
+	custom_join_pitch = 200
+	warnsound = true
+	api_sync_fehler = "anvil_land"
+	erfolgssound = true
+	warnung_sound = "note.pling"
+	party_join_warnung = ""
+	dungeon_join_warnung = ""
+	api_sync_ok = "fart.ogg"
+	custom_join_sound = false
+	join_volume = 100
+	custom_join_volume = 100
+	spieler_entfernt = ""
+	join_sound_event = "pling"
+	join_pitch = 100
+
+[advanced]
+	teilstring_match = false
+	partial_matching = false
+	case_sensitive = false
+	auto_cleanup_tage = 0
+	auto_backup = true
+	"auto-remove_test_(minuten)" = 1
+
+[warnings]
+	party_warnungen = true
+	dungeon_warnungen = true
+	warnungs-nachrichten = true
+	join_warnungen = true
+	warning_cooldown = 0
+	auto_block = false
+	chat_filter = false
+	title_warnungen = true
+	auto_party_kick = true
+
+[api]
+	sync_intervall = 1
+	nur_api_spieler = true
+	zur_api_hochladen = true
+	api_daten_verifizieren = false
+	von_api_laden = true
+	api_url = "http://losthideout.de:5000"
+	api_key = ""
+	api_aktiviert = true
+	api-sync_nachrichten = true
+	auto_sync = true
+
+	[api.min]
+		_report_count = 1
+
+[updater]
+	"beim_start_prüfen" = true
+	auto-updater = true
+	automatisch_installieren = true
+
+	[updater."prüfintervall_(min"]
+		")" = 5
+
