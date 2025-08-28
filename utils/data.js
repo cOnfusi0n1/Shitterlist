@@ -4,7 +4,7 @@ import { settings } from '../settings';
 import { API_ONLY, slInfo, slSuccess, slWarn, cleanPlayerName, showApiSyncMessage, runAsync, withPrefix, THEME, ALLOWED_FLOORS_HELP } from './core';
 
 // Persistent structure (extended fields kept for compatibility)
-export let shitterData = { players: [], version:'1.2.1', warningCooldowns:{}, lastBackup:0, lastSync:0 };
+export let shitterData = { players: [], version:'1.2.1', warningCooldowns:{}, lastBackup:0, lastSync:0, history: [] };
 export let apiPlayersCache = []; // Used when API_ONLY
 
 export function getActivePlayerList(){ return API_ONLY ? apiPlayersCache : shitterData.players; }
@@ -62,11 +62,15 @@ export function addShitter(username, reason='Manual', floor){
     if(reason && reason!==existing.reason){ existing.reason=reason; changed=true; }
     if(floor && floor!==existing.floor){ existing.floor=floor; changed=true; }
     if(changed){ existing.updatedAt=Date.now(); saveData(); slSuccess(`Aktualisiert: ${cleaned}`);} else { slInfo(`Unverändert: ${cleaned}`); }
+  // record update in history
+  try{ shitterData.history.push({ name: cleaned, action: 'update', reason: existing.reason, floor: existing.floor || null, date: Date.now(), id: existing.id }); saveData(); } catch(_){}
     return existing;
   }
   if(shitterData.players.length >= settings.maxListSize){ slWarn('Maximale Listengröße erreicht'); return null; }
   const entry={ id:Math.random().toString(36).substring(2,11), name:cleaned, reason, floor, severity:1, category:'general', source:'local', dateAdded:Date.now(), updatedAt:Date.now() };
   shitterData.players.push(entry); saveData(); slSuccess(`Hinzugefügt: ${cleaned}`);
+  // record add in history
+  try{ shitterData.history.push({ name: cleaned, action: 'add', reason: entry.reason, floor: entry.floor || null, date: Date.now(), id: entry.id }); saveData(); } catch(_){}
   try {
     const mins = (settings && typeof settings.testAutoRemoveMinutes==='number') ? settings.testAutoRemoveMinutes|0 : 0;
     if(mins>0 && reason && /test/i.test(String(reason))){
@@ -81,6 +85,20 @@ export function addShitter(username, reason='Manual', floor){
 }
 
 export function removeShitter(username){ if(!username) return false; if(API_ONLY){ const __g=(typeof globalThis!=='undefined')?globalThis:(typeof global!=='undefined'?global:this); const fn=__g.apiRemoveShitterDirect||apiRemoveShitterDirect; const ok=fn(username); if(ok) slSuccess(`${username} (API) entfernt`); else slWarn(`${username} nicht in API Cache`); return ok; } const before=shitterData.players.length; const target=normName(username); shitterData.players = shitterData.players.filter(p=>normName(p.name)!==target); const removed = before!==shitterData.players.length; if(removed){ saveData(); slSuccess(`${username} entfernt`);} else slWarn(`${username} nicht gefunden`); return removed; }
+
+// Enhanced remove that records history (used by commands)
+export function removeShitterWithHistory(username){
+  if(!username) return false;
+  const targetNorm = normName(username);
+  const found = shitterData.players.find(p=>normName(p.name)===targetNorm);
+  const ok = removeShitter(username);
+  if(ok && found){
+    try{ shitterData.history.push({ name: found.name, action: 'remove', reason: found.reason || null, floor: found.floor || null, date: Date.now(), id: found.id }); saveData(); } catch(_){}
+  }
+  return ok;
+}
+
+export function getPlayerHistory(name, limit=25){ if(!name) return []; try{ const low = normName(cleanPlayerName(name)||name); return (shitterData.history||[]).filter(h=>normName(h.name)===low).sort((a,b)=>b.date-a.date).slice(0, Math.max(1, limit)); } catch(e){ return []; } }
 
 export function clearList(){ if(API_ONLY){ slWarn('API-Only: kein lokales Löschen'); return; } shitterData.players=[]; saveData(); slSuccess('Liste geleert'); }
 

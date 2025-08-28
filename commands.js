@@ -1,7 +1,7 @@
 // commands.js – SINGLE IMPLEMENTATION
 import { settings } from './settings';
 import { slLog, slInfo, slWarn, showApiSyncMessage, ALLOWED_FLOORS_HELP } from './utils/core';
-import { addShitter, removeShitter, isShitter, getRandomShitter, getShitterStats, checkOnlineShitters, exportShitterlist, clearList, getActivePlayerList } from './utils/data';
+import { addShitter, removeShitter, removeShitterWithHistory, isShitter, getRandomShitter, getShitterStats, checkOnlineShitters, exportShitterlist, clearList, getActivePlayerList, getPlayerHistory } from './utils/data';
 import { syncWithAPI, downloadFromAPI, uploadToAPI, getAPIStatusColor, apiData } from './utils/api';
 import { performSelfUpdate, triggerManualUpdateCheck } from './updater';
 import { attemptAutoKick } from './utils/party';
@@ -162,7 +162,7 @@ register('command', (...args)=>{
       if(!entry){ ChatLib.chat(`&c[Shitterlist] &f${name} nicht gefunden.`); return; }
       // Remember reason for silent re-add
       lastRemovedReasons[lower] = entry.reason || 'Keine Angabe';
-      const ok = removeShitter(name);
+      const ok = removeShitterWithHistory(name);
       if(ok){
         const back = new Message(withPrefix(`Entfernt: &c${name}&f. `,'success'));
         back.addTextComponent(tc('&e[Wieder hinzufügen]')
@@ -172,6 +172,14 @@ register('command', (...args)=>{
       }
       break;
     }
+    case 'history': {
+      if(args.length<2){ ChatLib.chat('&c[Shitterlist] &fUsage: /sl history <username>'); return; }
+      const name = args[1];
+      const hist = getPlayerHistory(name, 25);
+      if(!hist || hist.length===0){ ChatLib.chat(withPrefix(`Keine Historie für ${name}`,'info')); return; }
+      ChatLib.chat(withPrefix(`Historie für ${name} (${hist.length}):`,'info'));
+      hist.forEach(h=>{ const d = new Date(h.date).toLocaleString(); ChatLib.chat(`• [${d}] ${h.action.toUpperCase()} ${h.reason?('- '+h.reason):''} ${h.floor?('[Floor '+h.floor+']'):''}`); });
+      break; }
     case 'readdsilently': {
       if(args.length<2){ ChatLib.chat('&c[Shitterlist] &fUsage: /sl readdsilently <username>'); return; }
       const name=args[1];
