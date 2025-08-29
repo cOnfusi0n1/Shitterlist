@@ -11,15 +11,16 @@ export function getActivePlayerList(){ return API_ONLY ? apiPlayersCache : shitt
 
 export function loadData(){
   try {
-    const raw = FileLib.read('Shitterlist', '.data.json');
-    if(raw){ const parsed=JSON.parse(raw); shitterData = Object.assign({}, shitterData, parsed, { players: (parsed.players||[]) }); }
+    // If running in API_ONLY mode, don't load local file - rely on remote API as source of truth.
     if(API_ONLY){
-      slInfo('API-Only Modus – initialer API Download...');
       const __g=(typeof globalThis!=='undefined')?globalThis:(typeof global!=='undefined'?global:this);
       if(settings.enableAPI && settings.apiUrl && __g.downloadFromAPI) setTimeout(()=>__g.downloadFromAPI(()=>{}), 500);
-    } else {
-      slSuccess(`${shitterData.players.length} Spieler geladen`);
+      return;
     }
+    // Non-API mode: load local cached data file
+    const raw = FileLib.read('Shitterlist', '.data.json');
+    if(raw){ const parsed=JSON.parse(raw); shitterData = Object.assign({}, shitterData, parsed, { players: (parsed.players||[]) }); }
+    slSuccess(`${shitterData.players.length} Spieler geladen`);
   } catch(e){ slWarn('Ladefehler: '+e.message); }
 }
 
