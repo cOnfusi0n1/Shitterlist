@@ -61,7 +61,7 @@ class Settings {
 	enableAPI = false;
 	@TextProperty({ name: "API URL", description: "URL der API", category: "API", placeholder: "https://api.example.com" })
 	apiUrl = "";
-	hypixelApiKey = "f899758e-e01c-4546-932c-d890c3c88896";
+	//hypixelApiKey = "f899758e-e01c-4546-932c-d890c3c88896";
 	@SwitchProperty({ name: "Auto Sync", description: "Automatische API-Syncs", category: "API" })
 	autoSync = false;
 	@SliderProperty({ name: "Sync Intervall", description: "Minuten", category: "API", min: 1, max: 60 })
