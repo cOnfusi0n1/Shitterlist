@@ -9,8 +9,9 @@ import './utils/party';
 import './maintenance';
 import './commands';
 import './utils/events';
-
 import { withPrefix } from './utils/core';
+
+
 try { ChatLib.chat(withPrefix('Module geladen','info')); } catch(_) {}
 
 // Start Auto-Updater if enabled and optionally check on load
