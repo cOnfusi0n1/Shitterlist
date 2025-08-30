@@ -1,6 +1,6 @@
 // commands.js – SINGLE IMPLEMENTATION
 import { settings } from './settings';
-import { slLog, slInfo, slWarn, showApiSyncMessage, ALLOWED_FLOORS_HELP, formatMessage } from './utils/core';
+import { slLog, slInfo, slWarn, showApiSyncMessage, ALLOWED_FLOORS_HELP, formatMessage, THEME } from './utils/core';
 import { addShitter, removeShitter, removeShitterWithHistory, isShitter, getRandomShitter, getShitterStats, checkOnlineShitters, exportShitterlist, clearList, getActivePlayerList, getPlayerHistory } from './utils/data';
 import { syncWithAPI, downloadFromAPI, uploadToAPI, getAPIStatusColor, apiData } from './utils/api';
 import { performSelfUpdate, triggerManualUpdateCheck } from './updater';
