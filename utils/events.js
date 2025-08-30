@@ -8,7 +8,7 @@ import { triggerManualUpdateCheck, startAutoUpdater } from '../updater';
 function isShitter(name){ return getActivePlayerList().some(p=>p.name.toLowerCase()===name.toLowerCase()); }
 
 // Chat filter for standard chat pattern
-register('chat',(username,message,event)=>{ if(!settings.enabled || !settings.chatFilter) return; const clean=username.replace(/§[0-9a-fk-or]/g,''); if(isShitter(clean)){ cancel(event); if(settings.debugMode) ChatLib.chat(withPrefix(`Nachricht von ${clean} gefiltert`,'warning')); } }).setCriteria('${username}: ${message}');
+register('chat',(username,message,event)=>{ if(!settings.enabled || !settings.chatFilter) return; const clean=username.replace(/§[0-9a-fk-or]/g,''); if(isShitter(clean)){ cancel(event); if(settings.debugMode) slWarn(`Nachricht von ${clean} gefiltert`); } }).setCriteria('${username}: ${message}');
 
 // Party/Dungeon join detection is handled exclusively in utils/party.js to avoid duplicates.
 
@@ -24,7 +24,7 @@ loadData();
 setTimeout(()=>{ if(settings.enableAPI && settings.autoSync) startAutoSync(); if(settings.checkUpdatesOnLoad) triggerManualUpdateCheck(); startAutoUpdater(); },3000);
 
 // Save on unload
-register('gameUnload',()=>{ saveData(); if(settings.debugMode) ChatLib.chat(withPrefix('Daten gespeichert','success')); });
+register('gameUnload',()=>{ saveData(); if(settings.debugMode) slInfo('Daten gespeichert'); });
 
 // === Party Join Overview ===
 function getJson(url) {
@@ -88,8 +88,8 @@ function showPartyOverview(nameRaw) {
 		if (cata != null) parts.push(`${THEME.sep}| ${THEME.accent}Cata ${THEME.info}${cata}`);
 		if (netLevel != null) parts.push(`${THEME.sep}| ${THEME.accent}NW ${THEME.info}${netLevel}`);
 
-		if (parts.length) ChatLib.chat(parts.join(' '));
-		else slInfo(withPrefix(`Keine Daten für ${name}`,'info'));
+	if (parts.length) ChatLib.chat(withPrefix(parts.join(' '),'info'));
+	else slInfo(`Keine Daten für ${name}`);
 	});
 }
 

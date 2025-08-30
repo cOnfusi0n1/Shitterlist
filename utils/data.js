@@ -108,7 +108,21 @@ export function isShitter(username){ if(!username) return false; const clean=cle
 export function getRandomShitter(){ const list=getActivePlayerList(); if(!list.length){ slWarn('Liste leer'); return null; } const p=list[Math.floor(Math.random()*list.length)]; slInfo(`Random: &c${p.name} &7(${p.reason})`); return p; }
 export function exportShitterlist(){ try { const arr=getActivePlayerList(); FileLib.write('Shitterlist','shitterlist_export.json', JSON.stringify(arr,null,2)); slSuccess(`Export (${arr.length}) erstellt`);} catch(e){ slWarn('Export Fehler: '+e.message);} }
 export function checkOnlineShitters(){ try { const tab=(TabList.getNames()||[]).map(n=>cleanPlayerName(n)).filter(Boolean); const list=getActivePlayerList(); const online=list.filter(p=>tab.some(t=>t.toLowerCase()===p.name.toLowerCase())); if(!online.length){ slInfo('Keine Shitter online'); return;} slWarn(`Online (${online.length}): ${online.map(o=>o.name).join(', ')}`); } catch(e){ slWarn('Online Check Fehler: '+e.message);} }
-export function getShitterStats(){ const list=getActivePlayerList(); if(!list.length){ slWarn('Keine Statistiken'); return; } const reasonStats={}; list.forEach(p=>{ reasonStats[p.reason]=(reasonStats[p.reason]||0)+1; }); const dates=list.map(p=>p.dateAdded).sort((a,b)=>a-b); const oldest=new Date(dates[0]).toLocaleDateString(); const newest=new Date(dates[dates.length-1]).toLocaleDateString(); ChatLib.chat(`&lStatistiken:','info`); ChatLib.chat(`&7Gesamt: &c${list.length}`); ChatLib.chat(`&7Ältester: &7${oldest}`); ChatLib.chat(`&7Neuester: &7${newest}`); ChatLib.chat('&7Top Gründe:'); Object.entries(reasonStats).sort(([,a],[,b])=>b-a).slice(0,5).forEach(([r,c])=>ChatLib.chat(`&7• ${r}: &c${c}`)); }
+export function getShitterStats(){
+  const list = getActivePlayerList();
+  if(!list.length){ slWarn('Keine Statistiken'); return; }
+  const reasonStats = {};
+  list.forEach(p=>{ reasonStats[p.reason] = (reasonStats[p.reason]||0) + 1; });
+  const dates = list.map(p=>p.dateAdded).sort((a,b)=>a-b);
+  const oldest = new Date(dates[0]).toLocaleDateString();
+  const newest = new Date(dates[dates.length-1]).toLocaleDateString();
+  slInfo('&lStatistiken:');
+  slInfo(`Gesamt: ${list.length}`);
+  slInfo(`Ältester: ${oldest}`);
+  slInfo(`Neuester: ${newest}`);
+  slInfo('Top Gründe:');
+  Object.entries(reasonStats).sort(([,a],[,b])=>b-a).slice(0,5).forEach(([r,c])=>slInfo(`• ${r}: ${c}`));
+}
 
 // Expose legacy globals (Rhino safe)
 const __g_data=(typeof globalThis!=='undefined')?globalThis:(typeof global!=='undefined'?global:this);

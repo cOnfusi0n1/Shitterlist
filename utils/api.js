@@ -104,7 +104,33 @@ export function syncWithAPI(){ if(!settings.enableAPI) return; if(apiData.syncIn
 export function getAPIStatusColor(){ return apiData.apiStatus==='connected'?'&a': apiData.apiStatus==='error'?'&c':'&7'; }
 
 // Direct API add/remove used when API_ONLY
-export function apiAddShitterDirect(username, reason, floor){ if(!settings.enableAPI || !settings.apiUrl){ slWarn('API nicht konfiguriert'); return null;} if(!username) return null; const lower=username.toLowerCase(); if(apiPlayersCache.find(p=>p.name.toLowerCase()===lower)){ slInfo(`${username} bereits im API Cache`); return null; } const safeReason = (reason && String(reason).trim().length>0) ? String(reason).trim() : 'Added'; const temp={ id:'pending_'+Math.random().toString(36).substring(2,8), name:username, reason:safeReason, floor: floor, category:'general', severity:1, dateAdded:Date.now(), source:'api', pending:true }; apiPlayersCache.push(temp); slInfo(`API Add gesendet: ${username}`); if(settings.enableWebhook && settings.webhookSendAdds) sendWebhook(`➕ Hinzugefügt: ${code(username)} (${code(safeReason)})`); runAsync('apiAdd',()=>{ const pl={ name:username, reason:safeReason, category:'general', severity:1 }; if(floor) pl.floor=floor; makeAPIRequest('/api/v1/players/batch','POST',{ players:[pl]},(err,res)=>{ if(err||!res||!res.success){ temp.failed=true; const raw=(err&&err.message)?String(err.message):''; if(/Floor must be F1-F7 or M1-M7/i.test(raw)) { ChatLib.chat('&c[Shitterlist] &f' + ALLOWED_FLOORS_HELP); } else { slWarn('Add fehlgeschlagen.'); } return;} slSuccess(`API Add bestätigt: ${username}`); downloadFromAPI(()=>{}); }); }); return temp; }
+export function apiAddShitterDirect(username, reason, floor){
+  if(!settings.enableAPI || !settings.apiUrl){ slWarn('API nicht konfiguriert'); return null; }
+  if(!username) return null;
+  const lower = username.toLowerCase();
+  if(apiPlayersCache.find(p=>p.name.toLowerCase()===lower)){ slInfo(`${username} bereits im API Cache`); return null; }
+  const safeReason = (reason && String(reason).trim().length>0) ? String(reason).trim() : 'Added';
+  const temp = { id:'pending_'+Math.random().toString(36).substring(2,8), name:username, reason:safeReason, floor: floor, category:'general', severity:1, dateAdded:Date.now(), source:'api', pending:true };
+  apiPlayersCache.push(temp);
+  slInfo(`API Add gesendet: ${username}`);
+  if(settings.enableWebhook && settings.webhookSendAdds) sendWebhook(`➕ Hinzugefügt: ${code(username)} (${code(safeReason)})`);
+  runAsync('apiAdd',()=>{
+    const pl = { name:username, reason:safeReason, category:'general', severity:1 };
+    if(floor) pl.floor = floor;
+    makeAPIRequest('/api/v1/players/batch','POST',{ players:[pl] },(err,res)=>{
+      if(err||!res||!res.success){
+        temp.failed = true;
+        const raw = (err&&err.message)?String(err.message):'';
+        if(/Floor must be F1-F7 or M1-M7/i.test(raw)) { slWarn(ALLOWED_FLOORS_HELP); }
+        else { slWarn('Add fehlgeschlagen.'); }
+        return;
+      }
+      slSuccess(`API Add bestätigt: ${username}`);
+      downloadFromAPI(()=>{});
+    });
+  });
+  return temp;
+}
 export function uploadToAPI(cb){ if(API_ONLY){ cb&&cb(true); return;} const locals=shitterData.players.filter(p=>p.source!=='api' && !p.uploaded); if(!locals.length){ showApiSyncMessage('Nichts zu uploaden','info'); cb&&cb(true); return;} const payload={ players: locals.map(p=>{ const o={ name:p.name, reason:p.reason, category:'general', severity:(typeof p.severity==='number'?p.severity:1) }; if(p.floor) o.floor=p.floor; return o; }) }; makeAPIRequest('/api/v1/players/batch','POST',payload,(err,res)=>{ if(err||!res||!res.success){ showApiSyncMessage('Upload Fehler: '+(err?err.message:'fail'),'warning'); cb&&cb(false); return; } locals.forEach(p=>p.uploaded=true); saveData(); showApiSyncMessage('Upload fertig','success'); cb&&cb(true); }); }
 export function apiRemoveShitterDirect(username){ if(!settings.enableAPI || !settings.apiUrl){ slWarn('API nicht konfiguriert'); return false;} const idx=apiPlayersCache.findIndex(p=>p.name.toLowerCase()===username.toLowerCase()); if(idx===-1){ slWarn(`${username} nicht im API Cache`); return false; } const cached=apiPlayersCache.splice(idx,1)[0]; slInfo(`API Remove gesendet: ${username}`); if(settings.enableWebhook && settings.webhookSendRemoves) sendWebhook(`➖ Entfernt: ${code(username)}`); if(!cached.id){ slSuccess(`API Remove lokal: ${username}`); return true; } runAsync('apiRemove',()=>{ makeAPIRequest(`/api/v1/players/${cached.id}`,'DELETE',null,(err,res)=>{ if(err||!res||!res.success){ slWarn('Remove Fehler – re-sync'); downloadFromAPI(()=>{}); if(settings.enableWebhook && settings.webhookSendRemoves) sendWebhook(`⚠ Remove Fehler für ${code(username)}`); } else { slSuccess(`API Remove bestätigt: ${username}`); } }); }); return true; }
 

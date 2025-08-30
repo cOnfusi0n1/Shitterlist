@@ -21,6 +21,10 @@ export const THEME = {
 // Colored prefix using THEME
 export function slPrefix(){
 	if(!settings.showPrefix) return '';
+	// Allow custom prefix from settings (full color codes allowed). If empty, use default themed prefix.
+	if(settings.messagePrefix && String(settings.messagePrefix).trim().length>0){
+		return ChatLib.addColor(String(settings.messagePrefix)) + ' ';
+	}
 	return `${THEME.bracket}[${THEME.brand}Shitterlist${THEME.bracket}] `;
 }
 
@@ -98,3 +102,24 @@ try {
 		formatMessage, runAsync, safeCommand, API_ONLY, cleanPlayerName
 	});
 } catch(_) {}
+
+// Backwards-compatible patch: normalize legacy "[Shitterlist]" literal messages
+try{
+	if(typeof ChatLib !== 'undefined' && !ChatLib.__slPrefixPatched){
+		const __origChat = ChatLib.chat.bind(ChatLib);
+		ChatLib.chat = function(msg){
+			try{
+				if(typeof msg === 'string'){
+					// detect legacy prefix like '&c[Shitterlist] ' or '[Shitterlist] '
+					const m = msg.match(/^(?:\s*&[0-9a-fk-or])?\s*\[Shitterlist\]\s*(.*)$/i);
+					if(m && m[1]!==undefined){
+						const rest = m[1];
+						return __origChat(ChatLib.addColor(slPrefix() + rest));
+					}
+				}
+			}catch(e){/* swallow */}
+			return __origChat(msg);
+		};
+		ChatLib.__slPrefixPatched = true;
+	}
+}catch(_){}

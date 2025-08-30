@@ -15,6 +15,8 @@ class Settings {
 	debugMode = false;
 	@SwitchProperty({ name: "Prefix anzeigen", description: "Zeigt [Shitterlist] Prefix in Nachrichten", category: "General" })
 	showPrefix = true;
+	@TextProperty({ name: "Custom Prefix", description: "Eigenes Nachrichten-Prefix (Farbcodes erlaubt). Leer = Standard", category: "General", placeholder: "&6[Shitterlist]&r" })
+	messagePrefix = "&6[Shitterlist]&r";
 	@SwitchProperty({ name: "Zeitstempel anzeigen", description: "Zeigt Zeitstempel in Nachrichten", category: "General" })
 	showTimestamps = false;
 	@SwitchProperty({ name: "Kompakte Nachrichten", description: "Verkürzt Chat-Nachrichten", category: "General" })
