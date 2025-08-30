@@ -83,21 +83,21 @@ register('command', (...args)=>{
         return;
       }
 
-      const header = `Shitter (${list.length})  Seite ${page}/${totalPages}`;
+      const header = `${THEME.header}Shitter ${THEME.dim}(${list.length})  ${THEME.dim}Seite ${page}/${totalPages}`;
       const start=(page-1)*pageSize;
       const pageItems = list.slice(start,start+pageSize);
 
       // Compose message with clickable names that run /pv <name>
-      const msg = new Message(new TextComponent(header));
+      const msg = new Message(tc(header));
       pageItems.forEach(pl => {
         const id = pl.id || '?';
-  const idBtn = tc(`\n#${id}`)
-          .setHover('show_text', ChatLib.addColor(`&cEintrag entfernen? Bestätigung folgt.\n&7Klick: /sl confirmremove ${pl.name}`))
+  const idBtn = tc(`\n${THEME.accent}#${id} `)
+          .setHover('show_text', ChatLib.addColor(`${THEME.warning}Eintrag entfernen? Bestätigung folgt.\n${THEME.dim}Klick: /sl confirmremove ${pl.name}`))
           .setClick('run_command', `/sl confirmremove ${pl.name}`);
         msg.addTextComponent(idBtn);
-        msg.addTextComponent(tc(' &f'));
-        const nameBtn = new TextComponent(pl.name)
-          .setHover('show_text', ChatLib.addColor(`&eKlicken zum Öffnen: /pv ${pl.name}`))
+        msg.addTextComponent(tc(`${THEME.info}`));
+        const nameBtn = tc(`${THEME.brand}${pl.name}`)
+          .setHover('show_text', ChatLib.addColor(`${THEME.accent}Klicken zum Öffnen: /pv ${pl.name}`))
           .setClick('run_command', `/pv ${pl.name}`);
         msg.addTextComponent(nameBtn);
         // Determine floor for display: use field or parse trailing [Fx] from reason
@@ -106,9 +106,9 @@ register('command', (...args)=>{
           if(pl.floor) floorLabel = String(pl.floor);
           else if(pl.reason){ const m = String(pl.reason).match(/\[(?:F|M)\d+\]$/i); if(m) floorLabel = m[0].replace(/[\[\]]/g,''); }
         } catch(_) {}
-        // Suffix with reason (+ optional floor) without THEME
-        const suffix = floorLabel ? ` - ${pl.reason||'Keine Angabe'} [${floorLabel}]` : ` - ${pl.reason||'Keine Angabe'}`;
-  msg.addTextComponent(new TextComponent(suffix));
+    // Suffix with reason (+ optional floor)
+    const suffix = floorLabel ? ` - ${pl.reason||'Keine Angabe'} [${floorLabel}]` : ` - ${pl.reason||'Keine Angabe'}`;
+  msg.addTextComponent(tc(`${THEME.dim}${suffix}`));
       });
 
       // Navigation (hover + click) appended to the same message so the whole block shares one ID
@@ -116,16 +116,16 @@ register('command', (...args)=>{
         try {
           const parts = [];
           if(page>1){
-            parts.push(tc('\n&c[< Zurück] ')
-              .setHover('show_text', ChatLib.addColor(`&cVorherige Seite (${page-1}/${totalPages})`))
+            parts.push(tc(`\n${THEME.accent}[< Zurück] `)
+              .setHover('show_text', ChatLib.addColor(`${THEME.dim}Vorherige Seite (${page-1}/${totalPages})`))
               .setClick('run_command', `/sl list ${page-1}`));
           } else {
             // add a newline for consistent spacing even without back button
             parts.push(new TextComponent('\n'));
           }
           if(page<totalPages){
-            parts.push(tc('&a[Weiter >]')
-              .setHover('show_text', ChatLib.addColor(`&aNächste Seite (${page+1}/${totalPages})`))
+            parts.push(tc(`${THEME.success}[Weiter >]`)
+              .setHover('show_text', ChatLib.addColor(`${THEME.dim}Nächste Seite (${page+1}/${totalPages})`))
               .setClick('run_command', `/sl list ${page+1}`));
           }
           if(parts.length){ parts.forEach(c=>msg.addTextComponent(c)); }
