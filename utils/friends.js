@@ -70,11 +70,32 @@ register('chat', (page,of,event)=>{ try{ _lastFriendHeader = Date.now(); }catch(
 register('chat', (player,rest,event)=>{
   try{
     if(Date.now() - _lastFriendHeader > 5000) return; // only treat lines following a Friends header
-    // Cancel original and replace with augmented message
+    // Try to read original hover from the event if present, then cancel and replace
+    let origHoverText = null;
+    try{
+      if(event && typeof event.getMessage === 'function'){
+        const origMsg = event.getMessage();
+        if(origMsg && typeof origMsg.getTextComponents === 'function'){
+          const tcs = origMsg.getTextComponents();
+          if(tcs && tcs.length && typeof tcs[0].getHover === 'function'){
+            origHoverText = tcs[0].getHover();
+          }
+        }
+      }
+    }catch(_){ origHoverText = null; }
+
     cancel(event);
     const note = getNote(player);
+    // Build combined hover: original hover (if any) + our note
+    let combinedHover = '';
+    if(origHoverText){
+      try{ combinedHover += String(origHoverText).replace(/\r/g,'') + '\n\n'; }catch(_){ combinedHover += String(origHoverText) + '\n\n'; }
+    }
+    if(note){ combinedHover += `${THEME.accent}Note:\n${THEME.dim}${note}`; }
+    if(!combinedHover) combinedHover = `${THEME.dim}Keine Notiz`;
+
     const nameComp = tc(`${THEME.brand}${player}`)
-      .setHover('show_text', ChatLib.addColor(note?`${THEME.accent}Note:\n${THEME.dim}${note}`:`${THEME.dim}Keine Notiz`))
+      .setHover('show_text', ChatLib.addColor(combinedHover))
       .setClick('run_command', `/pv ${player}`);
     const restComp = new TextComponent(ChatLib.addColor(' '+THEME.dim+rest));
     const msg = new Message(nameComp);
@@ -87,10 +108,29 @@ register('chat', (player,rest,event)=>{
 register('chat', (player,event)=>{
   try{
     if(Date.now() - _lastFriendHeader > 5000) return;
+    // Try to preserve original hover text, append note
+    let origHoverText = null;
+    try{
+      if(event && typeof event.getMessage === 'function'){
+        const origMsg = event.getMessage();
+        if(origMsg && typeof origMsg.getTextComponents === 'function'){
+          const tcs = origMsg.getTextComponents();
+          if(tcs && tcs.length && typeof tcs[0].getHover === 'function'){
+            origHoverText = tcs[0].getHover();
+          }
+        }
+      }
+    }catch(_){ origHoverText = null; }
+
     cancel(event);
     const note = getNote(player);
+    let combinedHover = '';
+    if(origHoverText){ try{ combinedHover += String(origHoverText).replace(/\r/g,'') + '\n\n'; }catch(_){ combinedHover += String(origHoverText) + '\n\n'; } }
+    if(note){ combinedHover += `${THEME.accent}Note:\n${THEME.dim}${note}`; }
+    if(!combinedHover) combinedHover = `${THEME.dim}Keine Notiz`;
+
     const nameComp = tc(`${THEME.brand}${player}`)
-      .setHover('show_text', ChatLib.addColor(note?`${THEME.accent}Note:\n${THEME.dim}${note}`:`${THEME.dim}Keine Notiz`))
+      .setHover('show_text', ChatLib.addColor(combinedHover))
       .setClick('run_command', `/pv ${player}`);
     const restComp = tc(' '+THEME.warning+'is currently offline');
     const msg = new Message(nameComp);
