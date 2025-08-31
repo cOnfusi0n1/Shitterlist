@@ -37,6 +37,22 @@ function slHelp(cmd, desc){ ChatLib.chat(ChatLib.addColor(`${THEME.brand}${cmd} 
 // Load at init
 loadNotes();
 
+// Debug helper: if debugMode is on, log any incoming line that looks like a friend entry
+register('chat', (raw,event)=>{
+  try{
+    if(!settings.debugMode) return;
+    let text='';
+    try{
+      if(typeof raw === 'string') text = raw;
+      else if(raw && typeof raw.getTextComponents==='function'){
+        const tcs = raw.getTextComponents(); for(let i=0;i<tcs.length;i++){ try{ if(typeof tcs[i].getText==='function') text+=tcs[i].getText(); else text+=String(tcs[i]); }catch(_){ text+=String(tcs[i]); } }
+      } else text = String(raw);
+    }catch(_){ text = String(raw); }
+    const plain = text.replace(/\u00A7[0-9a-fk-or]/gi,'').trim();
+    if(plain.match(/\bis in\b/i) || plain.match(/\bis currently offline\b/i)) slInfo(`[FriendDbg] ${plain}`);
+  }catch(_){ }
+});
+
 // --- Commands: /flnote add|rm|view|list ---
 register('command', (...args)=>{
   try{
