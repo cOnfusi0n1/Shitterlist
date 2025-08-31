@@ -162,8 +162,10 @@ register('chat', (event)=>{
   const note = getNote(norm);
   const nameComp = tc(`${THEME.brand}${player}`).setClick('run_command', `/pv ${norm}`);
     const msgOut = new Message(nameComp);
-    if(note){ msgOut.addTextComponent(tc(' '+THEME.dim+`[${THEME.accent}Note${THEME.dim}: ${note}]`)); }
-    msgOut.addTextComponent(new TextComponent(ChatLib.addColor(' '+THEME.dim+rest)));
+  // add rest first, then note at the very end
+  msgOut.addTextComponent(new TextComponent(ChatLib.addColor(' '+THEME.dim+rest)));
+  if(note){ msgOut.addTextComponent(tc(' '+THEME.dim+`[${THEME.accent}Note${THEME.dim}: ${note}]`)); }
+  if(settings.debugMode) slInfo(`[FriendAug] fallback matched: '${player}' -> norm='${norm}' note=${note? 'yes':'no'}`);
     ChatLib.chat(msgOut);
   }catch(e){ if(settings.debugMode) slWarn('Friend fallback error: '+e.message); }
 });
