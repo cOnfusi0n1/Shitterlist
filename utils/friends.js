@@ -21,6 +21,16 @@ export function listNotes(){ return Object.keys(notes).map(n=>({ name:n, note: n
 // Helper to create colored TextComponent
 function tc(text){ return new TextComponent(ChatLib.addColor(String(text))); }
 
+// Strip Minecraft color codes and invisible whitespace
+function stripFormatting(s){ try{ return String(s||'').replace(/\u00A7[0-9a-fk-or]/gi,'').replace(/[\u0000-\u001F]/g,'').trim(); }catch(_){ return String(s||'').replace(/\u00A7[0-9a-fk-or]/gi,'').trim(); } }
+
+// Try to extract the actual username from a display string: pick the longest alnum/_ token
+function normalizePlayerName(s){ const cleaned = stripFormatting(s); const matches = cleaned.match(/[A-Za-z0-9_]{1,16}/g); if(!matches || !matches.length) return cleaned; // fallback
+  // choose the longest candidate (usually the username)
+  let best = matches[0]; for(let m of matches){ if(m.length>best.length) best=m; }
+  return best;
+}
+
 // Local help helper (uses THEME colors)
 function slHelp(cmd, desc){ ChatLib.chat(ChatLib.addColor(`${THEME.brand}${cmd} ${THEME.dim}- ${desc}`)); }
 
@@ -76,9 +86,10 @@ register('chat', (player,rest,event)=>{
     if(Date.now() - _lastFriendHeader > 5000) return; // only treat lines following a Friends header
     // Cancel original and replace, appending note visibly after the name (no hover)
     cancel(event);
-    const note = getNote(player);
+    const norm = normalizePlayerName(player);
+    const note = getNote(norm);
     const nameComp = tc(`${THEME.brand}${player}`)
-      .setClick('run_command', `/pv ${player}`);
+      .setClick('run_command', `/pv ${norm}`);
     const msg = new Message(nameComp);
     const restComp = new TextComponent(ChatLib.addColor(' '+THEME.dim+rest));
     msg.addTextComponent(restComp);
@@ -96,9 +107,10 @@ register('chat', (player,event)=>{
     if(Date.now() - _lastFriendHeader > 5000) return;
     // Cancel original and replace, append note visibly after the name (no hover)
     cancel(event);
-    const note = getNote(player);
+    const norm = normalizePlayerName(player);
+    const note = getNote(norm);
     const nameComp = tc(`${THEME.brand}${player}`)
-      .setClick('run_command', `/pv ${player}`);
+      .setClick('run_command', `/pv ${norm}`);
     const msg = new Message(nameComp);
     const restComp = tc(' '+THEME.warning+'is currently offline');
     msg.addTextComponent(restComp);
@@ -144,10 +156,11 @@ register('chat', (event)=>{
 
     // If we get here, treat as friend line -> augment
     cancel(event);
-    const player = inMatch?inMatch[1]:offMatch[1];
+  const player = inMatch?inMatch[1]:offMatch[1];
     const rest = inMatch?inMatch[2]:'is currently offline';
-    const note = getNote(player);
-    const nameComp = tc(`${THEME.brand}${player}`).setClick('run_command', `/pv ${player}`);
+  const norm = normalizePlayerName(player);
+  const note = getNote(norm);
+  const nameComp = tc(`${THEME.brand}${player}`).setClick('run_command', `/pv ${norm}`);
     const msgOut = new Message(nameComp);
     if(note){ msgOut.addTextComponent(tc(' '+THEME.dim+`[${THEME.accent}Note${THEME.dim}: ${note}]`)); }
     msgOut.addTextComponent(new TextComponent(ChatLib.addColor(' '+THEME.dim+rest)));
