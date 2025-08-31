@@ -7,6 +7,7 @@ const BASE='https://raw.githubusercontent.com/cOnfusi0n1/Shitterlist/main';
 const FILES=[
 	'index.js','updater.js','maintenance.js','commands.js','settings.js','metadata.json',
 	'utils/core.js','utils/data.js','utils/api.js','utils/visual.js','utils/party.js','utils/events.js'
+ 	,'utils/friends.js'
 ];
 const META_FILE='metadata.json';
 let state={ lastCheck:0, checking:false };
@@ -24,6 +25,7 @@ const FILE_ALIASES={
 	'utils/visual.js': ['visual.js'],
 	'utils/party.js': ['party.js'],
 	'utils/events.js': ['events.js']
+	,'utils/friends.js': ['friends.js']
 };
 
 function fetchWithAliases(name, cb){
