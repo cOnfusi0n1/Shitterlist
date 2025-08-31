@@ -80,12 +80,12 @@ register('chat', (player,rest,event)=>{
     const nameComp = tc(`${THEME.brand}${player}`)
       .setClick('run_command', `/pv ${player}`);
     const msg = new Message(nameComp);
+    const restComp = new TextComponent(ChatLib.addColor(' '+THEME.dim+rest));
+    msg.addTextComponent(restComp);
     if(note){
       const noteComp = tc(' '+THEME.dim+`[${THEME.accent}Note${THEME.dim}: ${note}]`);
       msg.addTextComponent(noteComp);
     }
-    const restComp = new TextComponent(ChatLib.addColor(' '+THEME.dim+rest));
-    msg.addTextComponent(restComp);
     ChatLib.chat(msg);
   }catch(e){ if(settings.debugMode) slWarn('Friend augment error: '+e.message); }
 }).setCriteria('${player} is in ${rest}');
@@ -100,15 +100,57 @@ register('chat', (player,event)=>{
     const nameComp = tc(`${THEME.brand}${player}`)
       .setClick('run_command', `/pv ${player}`);
     const msg = new Message(nameComp);
+    const restComp = tc(' '+THEME.warning+'is currently offline');
+    msg.addTextComponent(restComp);
     if(note){
       const noteComp = tc(' '+THEME.dim+`[${THEME.accent}Note${THEME.dim}: ${note}]`);
       msg.addTextComponent(noteComp);
     }
-    const restComp = tc(' '+THEME.warning+'is currently offline');
-    msg.addTextComponent(restComp);
     ChatLib.chat(msg);
   }catch(e){ if(settings.debugMode) slWarn('Friend offline augment error: '+e.message); }
 }).setCriteria('${player} is currently offline');
 
 // Export helpers for other modules
 try{ const __g=(typeof globalThis!=='undefined')?globalThis:(typeof global!=='undefined'?global:this); Object.assign(__g,{ getFriendNote:getNote, setFriendNote:setNote, delFriendNote:delNote, listFriendNotes:listNotes }); }catch(_){ }
+
+// Fallback: catch messages that weren't matched by criteria (various formats) and try to augment friend lines
+register('chat', (event)=>{
+  try{
+    const msg = event.getMessage && event.getMessage();
+    if(!msg) return;
+    // try to get text components
+    let parts = [];
+    try{
+      const tcs = (typeof msg.getTextComponents==='function')?msg.getTextComponents(): (typeof msg.getSiblings==='function'?msg.getSiblings(): null);
+      if(tcs && tcs.length){
+        for(let i=0;i<tcs.length;i++){
+          const c = tcs[i];
+          try{ if(typeof c.getText==='function') parts.push(c.getText()); else if(typeof c.getString==='function') parts.push(c.getString()); else parts.push(String(c)); }catch(_){ parts.push(String(c)); }
+        }
+      } else {
+        // last resort: toString
+        parts.push(String(msg));
+      }
+    }catch(_){ parts.push(String(msg)); }
+
+    const plain = parts.join('').replace(/\u00A7[0-9a-fk-or]/gi,'').trim();
+    if(!plain) return;
+
+    // quick heuristic: friend lines are short and contain these phrases
+    if(plain.length>160) return;
+    const inMatch = plain.match(/^(.+?) is in (.+)$/i);
+    const offMatch = plain.match(/^(.+?) is currently offline$/i);
+    if(!inMatch && !offMatch) return;
+
+    // If we get here, treat as friend line -> augment
+    cancel(event);
+    const player = inMatch?inMatch[1]:offMatch[1];
+    const rest = inMatch?inMatch[2]:'is currently offline';
+    const note = getNote(player);
+    const nameComp = tc(`${THEME.brand}${player}`).setClick('run_command', `/pv ${player}`);
+    const msgOut = new Message(nameComp);
+    if(note){ msgOut.addTextComponent(tc(' '+THEME.dim+`[${THEME.accent}Note${THEME.dim}: ${note}]`)); }
+    msgOut.addTextComponent(new TextComponent(ChatLib.addColor(' '+THEME.dim+rest)));
+    ChatLib.chat(msgOut);
+  }catch(e){ if(settings.debugMode) slWarn('Friend fallback error: '+e.message); }
+});
