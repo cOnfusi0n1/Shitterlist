@@ -64,7 +64,11 @@ register('command', (...args)=>{
 // --- Friend list detection ---
 let _lastFriendHeader = 0;
 // header example: "Friends (Page 1 of 2) >>"
+// Header variants: match several common formats Hypixel may use
 register('chat', (page,of,event)=>{ try{ _lastFriendHeader = Date.now(); }catch(_){} }).setCriteria('Friends (Page ${page} of ${of}) >>');
+register('chat', (page,of,event)=>{ try{ _lastFriendHeader = Date.now(); }catch(_){} }).setCriteria('<< Friends (Page ${page} of ${of}) >>');
+register('chat', (page,of,event)=>{ try{ _lastFriendHeader = Date.now(); }catch(_){} }).setCriteria('<< Friends (Page ${page} of ${of})');
+register('chat', (page,of,event)=>{ try{ _lastFriendHeader = Date.now(); }catch(_){} }).setCriteria('Friends (Page ${page} of ${of})');
 
 // Pattern: "<player> is in <rest>"
 register('chat', (player,rest,event)=>{
