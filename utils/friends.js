@@ -78,6 +78,34 @@ register('command', (...args)=>{
       const all = listNotes(); if(!all.length){ slInfo('Keine Friend Notes'); return; }
       slInfo(`Friend Notes (${all.length}):`); all.slice(0,50).forEach(e=>slInfo(`• ${e.name}: ${e.note}`)); return;
     }
+    if(sub==='scan' || sub==='showfl'){
+      // Send /fl and collect the next few seconds of chat to display augmented friend list reliably
+      slInfo('Scanne Freundesliste... Bitte warte ein paar Sekunden');
+      const collected=[]; const start=Date.now();
+      const h = register('chat', (raw,ev)=>{
+        try{
+          let text='';
+          if(typeof raw==='string') text=raw;
+          else if(raw && typeof raw.getTextComponents==='function'){
+            const tcs=raw.getTextComponents(); for(let i=0;i<tcs.length;i++){ try{ if(typeof tcs[i].getText==='function') text+=tcs[i].getText(); else text+=String(tcs[i]); }catch(_){ text+=String(tcs[i]); } }
+          } else text=String(raw);
+          const plain = text.replace(/\u00A7[0-9a-fk-or]/gi,'').trim();
+          if(!plain) return;
+          if(plain.match(/\bis in\b/i) || plain.match(/\bis currently offline\b/i)) collected.push(plain);
+        }catch(_){ }
+      });
+      ChatLib.command('fl', true);
+      // stop collecting after 3500ms and display
+      setTimeout(()=>{ try{ h.unregister(); if(!collected.length){ slWarn('Keine Friend‑Zeilen empfangen'); return; } slInfo('Friend List (augmented):'); collected.forEach(line=>{
+            const inMatch = line.match(/^\s*(.+?)\s+is in\s+(.+)$/i);
+            const offMatch = line.match(/^\s*(.+?)\s+is currently offline\s*$/i);
+            const player = inMatch?inMatch[1]:offMatch[1]; const rest = inMatch?inMatch[2]:'is currently offline';
+            const norm = normalizePlayerName(player); const note = getNote(norm);
+            const out = `${player} ${rest}${note? ` [Note: ${note}]` : ''}`;
+            slInfo(out);
+      }); }catch(e){ slWarn('Scan Fehler: '+e.message); } },3500);
+      return;
+    }
     // help
     slInfo('Friend Notes Commands:');
     slHelp('/flnote add <name> <note>', 'Add/overwrite note');
