@@ -126,46 +126,54 @@ register('chat', (player,event)=>{
 try{ const __g=(typeof globalThis!=='undefined')?globalThis:(typeof global!=='undefined'?global:this); Object.assign(__g,{ getFriendNote:getNote, setFriendNote:setNote, delFriendNote:delNote, listFriendNotes:listNotes }); }catch(_){ }
 
 // Fallback: catch messages that weren't matched by criteria (various formats) and try to augment friend lines
-register('chat', (event)=>{
+// Robust fallback: handle different register('chat') signatures (msg, msg+event, event)
+register('chat', (...args)=>{
   try{
-    const msg = event.getMessage && event.getMessage();
-    if(!msg) return;
-    // try to get text components
+    let event = null; let raw = null;
+    if(args.length===1){ // could be event or raw string
+      const a = args[0];
+      if(a && typeof a.getMessage==='function'){ event = a; raw = a.getMessage(); }
+      else raw = a;
+    } else if(args.length>=2){ raw = args[0]; event = args[1]; }
+
+    if(!raw) return;
+
+    // build plain text from raw which may be a Message-like object or string
     let parts = [];
     try{
-      const tcs = (typeof msg.getTextComponents==='function')?msg.getTextComponents(): (typeof msg.getSiblings==='function'?msg.getSiblings(): null);
-      if(tcs && tcs.length){
-        for(let i=0;i<tcs.length;i++){
-          const c = tcs[i];
-          try{ if(typeof c.getText==='function') parts.push(c.getText()); else if(typeof c.getString==='function') parts.push(c.getString()); else parts.push(String(c)); }catch(_){ parts.push(String(c)); }
-        }
+      if(typeof raw === 'string') parts.push(raw);
+      else if(raw && typeof raw.getTextComponents==='function'){
+        const tcs = raw.getTextComponents();
+        for(let i=0;i<tcs.length;i++){ const c=tcs[i]; try{ if(typeof c.getText==='function') parts.push(c.getText()); else if(typeof c.getString==='function') parts.push(c.getString()); else parts.push(String(c)); }catch(_){ parts.push(String(c)); } }
+      } else if(raw && typeof raw.getSiblings==='function'){
+        const tcs = raw.getSiblings(); for(let i=0;i<tcs.length;i++){ parts.push(String(tcs[i])); }
       } else {
-        // last resort: toString
-        parts.push(String(msg));
+        parts.push(String(raw));
       }
-    }catch(_){ parts.push(String(msg)); }
+    }catch(_){ parts.push(String(raw)); }
 
     const plain = parts.join('').replace(/\u00A7[0-9a-fk-or]/gi,'').trim();
     if(!plain) return;
+    if(plain.length>200) return; // avoid huge lines
 
-    // quick heuristic: friend lines are short and contain these phrases
-    if(plain.length>160) return;
-    const inMatch = plain.match(/^(.+?) is in (.+)$/i);
-    const offMatch = plain.match(/^(.+?) is currently offline$/i);
+    const inMatch = plain.match(/^\s*(.+?)\s+is in\s+(.+)$/i);
+    const offMatch = plain.match(/^\s*(.+?)\s+is currently offline\s*$/i);
     if(!inMatch && !offMatch) return;
 
-    // If we get here, treat as friend line -> augment
-    cancel(event);
-  const player = inMatch?inMatch[1]:offMatch[1];
+    // matched a friend line
+    const playerDisplay = inMatch?inMatch[1]:offMatch[1];
     const rest = inMatch?inMatch[2]:'is currently offline';
-  const norm = normalizePlayerName(player);
-  const note = getNote(norm);
-  const nameComp = tc(`${THEME.brand}${player}`).setClick('run_command', `/pv ${norm}`);
+    const norm = normalizePlayerName(playerDisplay);
+    const note = getNote(norm);
+
+    if(event) try{ cancel(event); }catch(_){ }
+
+    const nameComp = tc(`${THEME.brand}${playerDisplay}`).setClick('run_command', `/pv ${norm}`);
     const msgOut = new Message(nameComp);
-  // add rest first, then note at the very end
-  msgOut.addTextComponent(new TextComponent(ChatLib.addColor(' '+THEME.dim+rest)));
-  if(note){ msgOut.addTextComponent(tc(' '+THEME.dim+`[${THEME.accent}Note${THEME.dim}: ${note}]`)); }
-  if(settings.debugMode) slInfo(`[FriendAug] fallback matched: '${player}' -> norm='${norm}' note=${note? 'yes':'no'}`);
+    msgOut.addTextComponent(new TextComponent(ChatLib.addColor(' '+THEME.dim+rest)));
+    if(note) msgOut.addTextComponent(tc(' '+THEME.dim+`[${THEME.accent}Note${THEME.dim}: ${note}]`));
     ChatLib.chat(msgOut);
+
+    if(settings.debugMode) slInfo(`[FriendAug] fallback matched: '${playerDisplay}' -> norm='${norm}' note=${note? 'yes':'no'}`);
   }catch(e){ if(settings.debugMode) slWarn('Friend fallback error: '+e.message); }
 });
