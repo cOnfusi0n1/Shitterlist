@@ -8,12 +8,12 @@ import { triggerManualUpdateCheck, startAutoUpdater } from '../updater';
 function isShitter(name){ return getActivePlayerList().some(p=>p.name.toLowerCase()===name.toLowerCase()); }
 
 // Chat filter for standard chat pattern
-register('chat',(username,message,event)=>{ if(!settings.enabled || !settings.chatFilter) return; const clean=username.replace(/§[0-9a-fk-or]/g,''); if(isShitter(clean)){ cancel(event); if(settings.debugMode) slWarn(`Nachricht von ${clean} gefiltert`); } }).setCriteria('${username}: ${message}');
+register('chat',(username,message,event)=>{ if(!settings.enabled || !settings.chatFilter) return; const clean=username.replace(/§[0-9a-fk-or]/g,''); if(isShitter(clean)){ cancel(event); if(settings.debugMode) slWarn('Nachricht von ' + clean + ' gefiltert'); } }).setCriteria('%s: %s');
 
 // TEMP DEBUG: dump friend-like lines for diagnosis when debugMode is on
-register('chat',(username,message,event)=>{ try{ if(!settings.debugMode) return; const plain = `${username}: ${message}`.replace(/§[0-9a-fk-or]/gi,'').trim(); if(plain.match(/\bis in\b/i) || plain.match(/\bis currently offline\b/i)) slInfo(`[FriendDump] ${plain}`); }catch(_){}}).setCriteria('${username}: ${message}');
+register('chat',(username,message,event)=>{ try{ if(!settings.debugMode) return; const plain = (username + ': ' + message).replace(/§[0-9a-fk-or]/gi,'').trim(); if(plain.match(/\bis in\b/i) || plain.match(/\bis currently offline\b/i)) slInfo('[FriendDump] ' + plain); }catch(_){}}).setCriteria('%s: %s');
 
-register('chat',(raw)=>{ try{ if(!settings.debugMode) return; let text=''; if(typeof raw==='string') text=raw; else if(raw && typeof raw.getTextComponents==='function'){ const tcs = raw.getTextComponents(); for(let i=0;i<tcs.length;i++){ try{ if(typeof tcs[i].getText==='function') text+=tcs[i].getText(); else text+=String(tcs[i]); }catch(_){ text+=String(tcs[i]); } } } else text=String(raw); const plain=text.replace(/§[0-9a-fk-or]/gi,'').trim(); if(plain.match(/\bis in\b/i) || plain.match(/\bis currently offline\b/i)) slInfo(`[FriendDumpRaw] ${plain}`); }catch(_){}});
+register('chat',(raw)=>{ try{ if(!settings.debugMode) return; let text=''; if(typeof raw==='string') text=raw; else if(raw && typeof raw.getTextComponents==='function'){ const tcs = raw.getTextComponents(); for(let i=0;i<tcs.length;i++){ try{ if(typeof tcs[i].getText==='function') text+=tcs[i].getText(); else text+=String(tcs[i]); }catch(_){ text+=String(tcs[i]); } } } else text=String(raw); const plain=text.replace(/§[0-9a-fk-or]/gi,'').trim(); if(plain.match(/\bis in\b/i) || plain.match(/\bis currently offline\b/i)) slInfo('[FriendDumpRaw] ' + plain); }catch(_){}});
 
 // Party/Dungeon join detection is handled exclusively in utils/party.js to avoid duplicates.
 
@@ -89,21 +89,21 @@ function showPartyOverview(nameRaw) {
 
 		// Build compact line
 		const parts = [];
-		parts.push(`${THEME.header}${name}`);
-		if (cata != null) parts.push(`${THEME.sep}| ${THEME.accent}Cata ${THEME.info}${cata}`);
-		if (netLevel != null) parts.push(`${THEME.sep}| ${THEME.accent}NW ${THEME.info}${netLevel}`);
+		parts.push(THEME.header + name);
+		if (cata != null) parts.push(THEME.sep + '| ' + THEME.accent + 'Cata ' + THEME.info + cata);
+		if (netLevel != null) parts.push(THEME.sep + '| ' + THEME.accent + 'NW ' + THEME.info + netLevel);
 
 	if (parts.length) ChatLib.chat(withPrefix(parts.join(' '),'info'));
-	else slInfo(`Keine Daten für ${name}`);
+	else slInfo('Keine Daten für ' + name);
 	});
 }
 
 // Party Finder join (Dungeon Group)
 register('chat', (name, rest) => {
 	try { showPartyOverview(name); } catch(_) {}
-}).setCriteria('Party Finder > ${name} joined the dungeon group!${rest}');
+}).setCriteria('Party Finder > %s joined the dungeon group!%s');
 
 // Regular party join
 register('chat', (name) => {
 	try { showPartyOverview(name); } catch(_) {}
-}).setCriteria('Party > ${name} joined the party.');
+}).setCriteria('Party > %s joined the party.');

@@ -26,7 +26,7 @@ function displayTitleWarningLocal(playerName, reason){
     if(cooldownSec && (now() - lastTitleAt) < cooldownSec*1000) return;
     lastTitleAt = now();
     const title = '§c⚠ SHITTER DETECTED ⚠';
-    const subtitle = `§f${playerName} §7(${reason||'Auto'})`;
+  const subtitle = '§f' + playerName + ' §7(' + (reason||'Auto') + ')';
     Client.showTitle(title, subtitle, 10, 80, 20);
   }catch(_){ }
 }
@@ -78,9 +78,9 @@ export function attemptAutoKick(playerName, reason, source='party'){
   resolveLeader((leader)=>{
     if(!leader || leader.toLowerCase()!==me){ delete inFlight[key]; return; }
     // Sequence: msg then kick
-    setTimeout(()=>{
-      safeCommand(`pc Kicking ${playerName} - Reason: ${reason||'Auto'}`);
-      setTimeout(()=>{ safeCommand(`p kick ${playerName}`); setTimeout(()=>{ delete inFlight[key]; }, 1200); }, 1000);
+      setTimeout(()=>{
+      safeCommand('pc Kicking ' + playerName + ' - Reason: ' + (reason||'Auto'));
+      setTimeout(()=>{ safeCommand('p kick ' + playerName); setTimeout(()=>{ delete inFlight[key]; }, 1200); }, 1000);
     }, 250);
   });
 }

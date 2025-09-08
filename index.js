@@ -9,7 +9,7 @@ import './utils/party';
 import './maintenance';
 import './commands';
 import './utils/events';
-import './utils/friends';
+
 import { withPrefix } from './utils/core';
 
 

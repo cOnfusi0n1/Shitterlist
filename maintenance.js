@@ -8,9 +8,9 @@ const DAY_MS=86400000;
 function autoBackupIfNeeded(){
   if(!settings.autoBackup) return; const now=Date.now();
   const today=new Date().toISOString().split('T')[0];
-  const backupName=`backup_${today}.json`;
+  const backupName='backup_' + today + '.json';
   if(FileLib.read('Shitterlist', backupName)) return; // one per day
-  try { FileLib.write('Shitterlist', backupName, JSON.stringify(shitterData.players||[],null,2)); if(settings.debugMode) slInfo(`Backup erstellt: ${backupName}`); } catch(e){ if(settings.debugMode) slInfo('Backup Fehler: '+e.message); }
+  try { FileLib.write('Shitterlist', backupName, JSON.stringify(shitterData.players||[],null,2)); if(settings.debugMode) slInfo('Backup erstellt: ' + backupName); } catch(e){ if(settings.debugMode) slInfo('Backup Fehler: '+e.message); }
 }
 
 function autoCleanupOldEntries(){
@@ -19,7 +19,7 @@ function autoCleanupOldEntries(){
   const before=shitterData.players.length;
   shitterData.players=shitterData.players.filter(p=>!p.dateAdded || p.dateAdded>=cutoff);
   const removed=before-shitterData.players.length;
-  if(removed>0){ saveData(); slInfo(`Cleanup entfernte ${removed}`); }
+  if(removed>0){ saveData(); slInfo('Cleanup entfernte ' + removed); }
 }
 
 export function getBreakdown(){

@@ -3,7 +3,7 @@
 import { settings } from '../settings';
 
 // ========= Logging =========
-function ts(){ return settings.showTimestamps ? `&7[${new Date().toLocaleTimeString()}] ` : ''; }
+function ts(){ return settings.showTimestamps ? '&7[' + new Date().toLocaleTimeString() + '] ' : ''; }
 
 // Global, hardcoded colors for the entire module
 export const THEME = {
@@ -25,7 +25,7 @@ export function slPrefix(){
 	if(settings.messagePrefix && String(settings.messagePrefix).trim().length>0){
 		return ChatLib.addColor(String(settings.messagePrefix)) + ' ';
 	}
-	return `${THEME.bracket}[${THEME.brand}Shitterlist${THEME.bracket}] `;
+	return THEME.bracket + '[' + THEME.brand + 'Shitterlist' + THEME.bracket + '] ';
 }
 
 function normalizeUmlauts(t){ if(!t) return t; return t.replace(/Ã¼/g,'ü').replace(/Ãœ/g,'Ü').replace(/Ã¶/g,'ö').replace(/Ã–/g,'Ö').replace(/Ã¤/g,'ä').replace(/Ã„/g,'Ä').replace(/ÃŸ/g,'ß'); }
@@ -47,7 +47,13 @@ export const slWarn   = m=>slLog('warning',m,'warning');
 export const showApiSyncMessage=(m,t='info')=>slLog('api',m,t);
 
 // ========= Async (Java Thread wrapper) =========
-let __asyncInit=false, __Thread, __Runnable; export function runAsync(label,fn){ try{ if(!__asyncInit){ __Thread=Java.type('java.lang.Thread'); __Runnable=Java.type('java.lang.Runnable'); __asyncInit=true; } new __Thread(new __Runnable({ run(){ try{ fn(); }catch(e){ if(settings.debugMode) slWarn(`[Async ${label}] ${e}`); } } })).start(); }catch(e){ try{ fn(); }catch(_){} } }
+let __asyncInit=false, __Thread, __Runnable;
+export function runAsync(label,fn){
+	try{
+		if(!__asyncInit){ __Thread=Java.type('java.lang.Thread'); __Runnable=Java.type('java.lang.Runnable'); __asyncInit=true; }
+		new __Thread(new __Runnable({ run(){ try{ fn(); }catch(e){ if(settings.debugMode) slWarn('[Async ' + label + '] ' + e); } } })).start();
+	}catch(e){ try{ fn(); }catch(_){} }
+}
 
 // ========= Rate‑limited Command Queue =========
 const COMMAND_DELAY_MS = 1200; // higher to satisfy server cooldowns and avoid 'slow down'
@@ -57,12 +63,12 @@ export function safeCommand(cmd){ if(!cmd) return; __queue.push(cmd); }
 export function sendCommandNow(cmd){
 	if(!cmd) return;
 	try{
-		if(settings.debugMode) ChatLib.chat(`&8[CMD:NOW] /${cmd}`);
+		if(settings.debugMode) ChatLib.chat('&8[CMD:NOW] /' + cmd);
 		// Primary path
 		ChatLib.say('/'+cmd);
 	// Bump queue timer so subsequent queued commands respect spacing
-	try{ __last = Date.now(); }catch(_){}
-	}catch(e){
+	try{ __last = Date.now(); }catch(_){}}
+	catch(e){
 	try{ ChatLib.command(cmd,true); try{ __last = Date.now(); }catch(_){} }catch(e2){ if(settings.debugMode) slWarn('CmdNow Fehler (fallback): '+e2.message); }
 		if(settings.debugMode) slWarn('CmdNow Fehler: '+e.message);
 	}
@@ -72,7 +78,7 @@ register('tick',()=>{
 	const now=Date.now();
 	if(now-__last<COMMAND_DELAY_MS) return;
 	const next=__queue.shift();
-	if(settings.debugMode) ChatLib.chat(`&8[CMD] /${next}`);
+	if(settings.debugMode) ChatLib.chat('&8[CMD] /' + next);
 		try{
 			// Primary path: send to server as raw chat message with leading slash
 			ChatLib.say('/'+next);

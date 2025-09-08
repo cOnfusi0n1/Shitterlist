@@ -29,7 +29,7 @@ const FILE_ALIASES={
 };
 
 function fetchWithAliases(name, cb){
-	const primary = `${BASE}/${name}`;
+	const primary = BASE + '/' + name;
 	fetchTxt(primary,(e,txt)=>{
 		if(!e && txt){ cb(null, txt, name); return; }
 		const aliases = FILE_ALIASES[name]||[];
@@ -37,8 +37,8 @@ function fetchWithAliases(name, cb){
 		let i=0;
 		const tryNext=()=>{
 			if(i>=aliases.length){ cb(e||new Error('not found'), null, name); return; }
-			const url = `${BASE}/${aliases[i++]}`;
-			fetchTxt(url,(e2,txt2)=>{ if(!e2 && txt2){ if(settings.debugMode) slInfo(`Updater: nutze Alias für ${name}`); cb(null, txt2, name); } else tryNext(); });
+			const url = BASE + '/' + aliases[i++];
+			fetchTxt(url,(e2,txt2)=>{ if(!e2 && txt2){ if(settings.debugMode) slInfo('Updater: nutze Alias für ' + name); cb(null, txt2, name); } else tryNext(); });
 		};
 		tryNext();
 	});
@@ -104,14 +104,14 @@ export function triggerManualUpdateCheck(){
 	checkForUpdate((has, _meta, localV, remoteV)=>{
 		if(has){
 			try {
-				const label = `&a[Update verfügbar: ${localV||'?'} -> ${remoteV||'?'}]`;
-				const hover = `&aKlicken zum Installieren\n&7Aktuell: &f${localV||'?'}\n&7Neu: &f${remoteV||'?'}`;
+				const label = '&a[Update verfügbar: ' + (localV||'?') + ' -> ' + (remoteV||'?') + ']';
+				const hover = '&aKlicken zum Installieren\\n&7Aktuell: &f' + (localV||'?') + '\\n&7Neu: &f' + (remoteV||'?');
 				const btn = new TextComponent(label)
 					.setHover('show_text', hover)
 					.setClick('run_command', '/sl update-now');
 				ChatLib.chat(new Message(btn));
 			} catch(e){
-				slLog('general',`Update verfügbar (${localV||'?'} -> ${remoteV||'?'}): /sl update-now`,'info');
+				slLog('general','Update verfügbar (' + (localV||'?') + ' -> ' + (remoteV||'?') + '): /sl update-now','info');
 			}
 		} else {
 			slInfo(`Aktuell (${localV||'?'})`);
@@ -119,7 +119,7 @@ export function triggerManualUpdateCheck(){
 	});
 }
 
-export function startAutoUpdater(){ if(!settings.autoUpdaterEnabled) return; if(startAutoUpdater._reg) return; const mins=Math.max(1, settings.updateCheckInterval||5); startAutoUpdater._reg=register('step',()=>{ const now=Date.now(); if(now-state.lastCheck < mins*60*1000) return; if(state.checking) return; checkForUpdate(has=>{ if(has && settings.autoInstallUpdates) performSelfUpdate(true); }); }).setDelay(60); if(settings.debugMode) ChatLib.chat(formatMessage(`AutoUpdater aktiv – Intervall ${mins}m`, 'info')); }
+export function startAutoUpdater(){ if(!settings.autoUpdaterEnabled) return; if(startAutoUpdater._reg) return; const mins=Math.max(1, settings.updateCheckInterval||5); startAutoUpdater._reg=register('step',()=>{ const now=Date.now(); if(now-state.lastCheck < mins*60*1000) return; if(state.checking) return; checkForUpdate(has=>{ if(has && settings.autoInstallUpdates) performSelfUpdate(true); }); }).setDelay(60); if(settings.debugMode) ChatLib.chat(formatMessage('AutoUpdater aktiv – Intervall ' + mins + 'm', 'info')); }
 
 const __g_upd=(typeof globalThis!=='undefined')?globalThis:(typeof global!=='undefined'?global:this);
 try { Object.assign(__g_upd,{ performSelfUpdate, triggerManualUpdateCheck, startAutoUpdater, checkForUpdate }); } catch(_) {}
