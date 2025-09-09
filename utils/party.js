@@ -77,9 +77,15 @@ export function attemptAutoKick(playerName, reason, source='party'){
   const me = Player.getName().toLowerCase();
   resolveLeader((leader)=>{
     if(!leader || leader.toLowerCase()!==me){ delete inFlight[key]; return; }
+    // Determine whether to include the reason in the party-chat message before kicking
+    const includeReason = (settings && typeof settings.partyKickIncludeReason !== 'undefined') ? !!settings.partyKickIncludeReason : true;
     // Sequence: msg then kick
-      setTimeout(()=>{
-      safeCommand('pc Kicking ' + playerName + ' - Reason: ' + (reason||'Auto'));
+    setTimeout(()=>{
+      if(includeReason){
+        safeCommand('pc Kicking ' + playerName + ' - Reason: ' + (reason||'Auto'));
+      } else {
+        safeCommand('pc Kicking ' + playerName);
+      }
       setTimeout(()=>{ safeCommand('p kick ' + playerName); setTimeout(()=>{ delete inFlight[key]; }, 1200); }, 1000);
     }, 250);
   });

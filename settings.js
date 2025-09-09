@@ -39,6 +39,8 @@ class Settings {
 	autoBlock = false;
 	@SwitchProperty({ name: "Auto Party Kick", description: "Kickt Shitter automatisch aus der Party", category: "Warnings" })
 	autoPartyKick = false;
+	@SwitchProperty({ name: "Party-Kick Grund senden", description: "Fügt den Grund in die 'pc Kicking' Nachricht vor dem Kick hinzu", category: "Warnings" })
+	partyKickIncludeReason = true;
 	@SwitchProperty({ name: "Warnsound", description: "Sound bei Warnungen", category: "Sounds" })
 	warningSound = true;
 	@SwitchProperty({ name: "Erfolgssound", description: "Sound bei Erfolgen", category: "Sounds" })
@@ -109,4 +111,5 @@ class Settings {
 	forceUpdateButton() { if (typeof performSelfUpdate === 'function') performSelfUpdate(true); }
 	constructor(){ this.initialize(this); }
 }
+
 export const settings = new Settings();
