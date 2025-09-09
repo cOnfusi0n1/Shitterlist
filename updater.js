@@ -25,7 +25,7 @@ const FILE_ALIASES={
 	'utils/visual.js': ['visual.js'],
 	'utils/party.js': ['party.js'],
 	'utils/events.js': ['events.js']
-	,'utils/friends.js': ['friends.js']
+	,'utils/bonzo.js': ['bonzo.js']
 };
 
 function fetchWithAliases(name, cb){

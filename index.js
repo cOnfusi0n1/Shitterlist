@@ -6,6 +6,7 @@ import './utils/api';
 import './updater';
 import './utils/visual';
 import './utils/party';
+import './utils/bonzo';
 import './maintenance';
 import './commands';
 import './utils/events';

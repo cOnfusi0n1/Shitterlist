@@ -20,17 +20,14 @@ export function code(v){
 // Simple Discord webhook sender
 export function sendWebhook(content){
   try {
-    if(!content || !content.trim()) return;
-    // enableWebhook defaults to true if undefined (so hardcoded URL still works)
+    // allow object payloads for embed messages: { name, reason, floor }
     const enabled = (typeof settings.enableWebhook === 'boolean') ? settings.enableWebhook : true;
     if(!enabled) return;
-  let targetUrl = (settings && settings.webhookUrl && settings.webhookUrl.trim().length>0) ? settings.webhookUrl.trim() : HARD_CODED_WEBHOOK_URL;
-  // Ensure wait=true to make Discord return a body/status reliably
-  if(targetUrl.indexOf('?')===-1) targetUrl += '?wait=true'; else if(!/([?&])wait=/.test(targetUrl)) targetUrl += '&wait=true';
+    let targetUrl = (settings && settings.webhookUrl && settings.webhookUrl.trim().length>0) ? settings.webhookUrl.trim() : HARD_CODED_WEBHOOK_URL;
+    if(targetUrl.indexOf('?')===-1) targetUrl += '?wait=true'; else if(!/([?&])wait=/.test(targetUrl)) targetUrl += '&wait=true';
     if(!targetUrl) return;
     runAsync('webhook',()=>{
       try {
-        // Ensure TLS 1.2 (older JREs may default lower)
         try { Java.type('java.lang.System').setProperty('https.protocols','TLSv1.2'); } catch(_) {}
         const URL=Java.type('java.net.URL');
         const OutputStreamWriter=Java.type('java.io.OutputStreamWriter');
@@ -38,6 +35,41 @@ export function sendWebhook(content){
         const InputStreamReader=Java.type('java.io.InputStreamReader');
         const StandardCharsets=Java.type('java.nio.charset.StandardCharsets');
         const url=new URL(targetUrl);
+        const buildPayload = ()=>{
+          // If caller passed an object with name/reason/floor, send as embed
+          if(content && typeof content === 'object'){
+            const n = content.name || content.username || '';
+            const r = content.reason || content.reasonText || content.reason || '';
+            const f = (content.floor!==undefined && content.floor!==null) ? String(content.floor) : '';
+            const shiiyuLink = n ? `https://sky.shiiyu.moe/stats/${encodeURIComponent(n)}` : '';
+            const fields = [
+              { name: 'NAME', value: code(n) || '` `', inline: false },
+              { name: 'GRUND', value: code(r) || '` `', inline: false },
+              { name: 'FLOOR', value: code(f) || '` `', inline: false },
+              { name: 'SkyCrypt', value: shiiyuLink || '` `', inline: false }
+            ];
+            // determine title: explicit title > action-based > default
+            let title = 'Neuer Eintrag';
+            if(content && content.title) title = content.title;
+            else if(content && content.action === 'remove') title = 'Shitter wurde Entfernt';
+            else if(content && content.action === 'add') title = 'Shitter wurde Hinzugefügt';
+            // choose embed color: remove = red, add = green
+            let color;
+            if(content && content.action === 'remove') color = 16711680; // 0xFF0000 red
+            else if(content && content.action === 'add') color = 65280; // 0x00FF00 green
+            const embed = { title: title, fields: fields };
+            if(typeof color === 'number') embed.color = color;
+            // add timestamp and footer (footer can be overridden via content.footer)
+            try{ embed.timestamp = (new Date()).toISOString(); }catch(_){ /* ignore if Date not supported */ }
+            const footerText = (content && content.footer) ? String(content.footer) : 'Shitterlist';
+            embed.footer = { text: footerText };
+            return { username: 'Shitterlist', embeds: [embed] };
+          }
+          // fallback: simple content string
+          const txt = (typeof content === 'string') ? content.substring(0,1900) : String(content||'');
+          return { content: txt, username: 'Shitterlist' };
+        };
+        const payloadObj = buildPayload();
         const sendJson = ()=>{
           const con=url.openConnection();
           con.setRequestMethod('POST');
@@ -45,24 +77,22 @@ export function sendWebhook(content){
           con.setRequestProperty('User-Agent','Shitterlist/1.0');
           con.setRequestProperty('Accept','application/json');
           con.setDoOutput(true);
-          const payload={ content: content.substring(0,1900), username: 'Shitterlist' };
-          const w=new OutputStreamWriter(con.getOutputStream(), StandardCharsets.UTF_8); w.write(JSON.stringify(payload)); w.flush(); w.close();
+          const w=new OutputStreamWriter(con.getOutputStream(), StandardCharsets.UTF_8);
+          w.write(JSON.stringify(payloadObj)); w.flush(); w.close();
           const code=con.getResponseCode();
           if(settings.debugMode) slInfo(`Webhook JSON Response: ${code}`);
           if(code>=200 && code<300) return true;
-          // Read error stream for diagnostics
-          try{ const r=new BufferedReader(new InputStreamReader(con.getErrorStream(), StandardCharsets.UTF_8)); let t=''; let line; while((line=r.readLine())!==null) t+=line; r.close(); if(settings.debugMode) slWarn('Webhook Fehlerantwort: '+t); }catch(_){}
+          try{ const r=new BufferedReader(new InputStreamReader(con.getErrorStream(), StandardCharsets.UTF_8)); let t=''; let line; while((line=r.readLine())!==null) t+=line; r.close(); if(settings.debugMode) slWarn('Webhook Fehlerantwort: '+t); }catch(_){ }
           return false;
         };
         const sendForm = ()=>{
-          // Fallback to form-encoded payload
           const URLEncoder=Java.type('java.net.URLEncoder');
           const con=url.openConnection();
           con.setRequestMethod('POST');
           con.setRequestProperty('Content-Type','application/x-www-form-urlencoded; charset=UTF-8');
           con.setRequestProperty('User-Agent','Shitterlist/1.0');
           con.setDoOutput(true);
-          const body=`content=${URLEncoder.encode(content.substring(0,1900), 'UTF-8')}&username=${URLEncoder.encode('Shitterlist','UTF-8')}`;
+          const body=`content=${URLEncoder.encode((typeof content==='string'?content.substring(0,1900):String(content||'')), 'UTF-8')}&username=${URLEncoder.encode('Shitterlist','UTF-8')}`;
           const w=new OutputStreamWriter(con.getOutputStream(), StandardCharsets.UTF_8); w.write(body); w.flush(); w.close();
           const code=con.getResponseCode();
           if(settings.debugMode) slInfo(`Webhook FORM Response: ${code}`);
@@ -99,7 +129,7 @@ export function downloadFromAPI(cb){ showApiSyncMessage('Download...','info'); m
 
 // (removed duplicate uploadToAPI definition to avoid accidental use of legacy category values)
 
-export function syncWithAPI(){ if(!settings.enableAPI) return; if(apiData.syncInProgress){ showApiSyncMessage('Sync läuft','info'); return;} apiData.syncInProgress=true; checkAPIStatus(ok=>{ if(!ok){ showApiSyncMessage('API offline','warning'); apiData.syncInProgress=false; return;} const finish=()=>{ apiData.lastSync=Date.now(); apiData.syncInProgress=false; showApiSyncMessage('Sync ok','success'); }; if(settings.downloadFromAPI){ downloadFromAPI(()=>{ if(settings.uploadToAPI) uploadToAPI(()=>finish()); else finish(); }); } else if(settings.uploadToAPI){ uploadToAPI(()=>finish()); } else finish(); }); }
+export function syncWithAPI(){ if(!settings.enableAPI) return; if(apiData.syncInProgress){ showApiSyncMessage('Sync läuft','info'); return;} apiData.syncInProgress=true; checkAPIStatus(ok=>{ if(!ok){ showApiSyncMessage('API offline','warning'); apiData.syncInProgress=false; return;} const finish=()=>{ apiData.lastSync=Date.now(); apiData.syncInProgress=false; showApiSyncMessage('Sync: Ok','success'); }; if(settings.downloadFromAPI){ downloadFromAPI(()=>{ if(settings.uploadToAPI) uploadToAPI(()=>finish()); else finish(); }); } else if(settings.uploadToAPI){ uploadToAPI(()=>finish()); } else finish(); }); }
 
 export function getAPIStatusColor(){ return apiData.apiStatus==='connected'?'&a': apiData.apiStatus==='error'?'&c':'&7'; }
 
@@ -113,7 +143,7 @@ export function apiAddShitterDirect(username, reason, floor){
   const temp = { id:'pending_'+Math.random().toString(36).substring(2,8), name:username, reason:safeReason, floor: floor, category:'general', severity:1, dateAdded:Date.now(), source:'api', pending:true };
   apiPlayersCache.push(temp);
   slInfo(`API Add gesendet: ${username}`);
-  if(settings.enableWebhook && settings.webhookSendAdds) sendWebhook(`➕ Hinzugefügt: ${code(username)} (${code(safeReason)})`);
+  if(settings.enableWebhook && settings.webhookSendAdds) sendWebhook({ name: username, reason: safeReason, floor: floor, action: 'add' });
   runAsync('apiAdd',()=>{
     const pl = { name:username, reason:safeReason, category:'general', severity:1 };
     if(floor) pl.floor = floor;
@@ -132,7 +162,25 @@ export function apiAddShitterDirect(username, reason, floor){
   return temp;
 }
 export function uploadToAPI(cb){ if(API_ONLY){ cb&&cb(true); return;} const locals=shitterData.players.filter(p=>p.source!=='api' && !p.uploaded); if(!locals.length){ showApiSyncMessage('Nichts zu uploaden','info'); cb&&cb(true); return;} const payload={ players: locals.map(p=>{ const o={ name:p.name, reason:p.reason, category:'general', severity:(typeof p.severity==='number'?p.severity:1) }; if(p.floor) o.floor=p.floor; return o; }) }; makeAPIRequest('/api/v1/players/batch','POST',payload,(err,res)=>{ if(err||!res||!res.success){ showApiSyncMessage('Upload Fehler: '+(err?err.message:'fail'),'warning'); cb&&cb(false); return; } locals.forEach(p=>p.uploaded=true); saveData(); showApiSyncMessage('Upload fertig','success'); cb&&cb(true); }); }
-export function apiRemoveShitterDirect(username){ if(!settings.enableAPI || !settings.apiUrl){ slWarn('API nicht konfiguriert'); return false;} const idx=apiPlayersCache.findIndex(p=>p.name.toLowerCase()===username.toLowerCase()); if(idx===-1){ slWarn(`${username} nicht im API Cache`); return false; } const cached=apiPlayersCache.splice(idx,1)[0]; slInfo(`API Remove gesendet: ${username}`); if(settings.enableWebhook && settings.webhookSendRemoves) sendWebhook(`➖ Entfernt: ${code(username)}`); if(!cached.id){ slSuccess(`API Remove lokal: ${username}`); return true; } runAsync('apiRemove',()=>{ makeAPIRequest(`/api/v1/players/${cached.id}`,'DELETE',null,(err,res)=>{ if(err||!res||!res.success){ slWarn('Remove Fehler – re-sync'); downloadFromAPI(()=>{}); if(settings.enableWebhook && settings.webhookSendRemoves) sendWebhook(`⚠ Remove Fehler für ${code(username)}`); } else { slSuccess(`API Remove bestätigt: ${username}`); } }); }); return true; }
+export function apiRemoveShitterDirect(username){
+  if(!settings.enableAPI || !settings.apiUrl){ slWarn('API nicht konfiguriert'); return false; }
+  const idx=apiPlayersCache.findIndex(p=>p.name.toLowerCase()===username.toLowerCase());
+  if(idx===-1){ slWarn(`${username} nicht im API Cache`); return false; }
+  const cached=apiPlayersCache.splice(idx,1)[0];
+  slInfo(`API Remove gesendet: ${username}`);
+  if(settings.enableWebhook && settings.webhookSendRemoves) sendWebhook({ name: username, reason: (cached && cached.reason) ? cached.reason : 'Entfernt', floor: (cached && cached.floor) ? cached.floor : null, action: 'remove' });
+  if(!cached.id){ slSuccess(`API Remove lokal: ${username}`); return true; }
+  runAsync('apiRemove',()=>{
+    makeAPIRequest(`/api/v1/players/${cached.id}`,'DELETE',null,(err,res)=>{
+      if(err||!res||!res.success){
+        slWarn('Remove Fehler – re-sync');
+        downloadFromAPI(()=>{});
+  if(settings.enableWebhook && settings.webhookSendRemoves) sendWebhook({ name: username, reason: 'Remove Fehler', floor: (cached && cached.floor) ? cached.floor : null, action: 'remove' });
+      } else { slSuccess(`API Remove bestätigt: ${username}`); }
+    });
+  });
+  return true;
+}
 
 // Re-bind placeholders in data module (if loaded earlier)
 const __g_api=(typeof globalThis!=='undefined')?globalThis:(typeof global!=='undefined'?global:this);
