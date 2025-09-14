@@ -282,7 +282,18 @@ register('command', (...args)=>{
 }).setName('shitterlist').setAliases('sl');
 
 // Keep GUI command, no THEME needed
-register('command',()=>settings.openGUI && settings.openGUI()).setName('slconfig').setAliases('shitterlistconfig','slgui');
+register('command', ()=>{
+  try{
+    if(settings && typeof settings.openGUI === 'function'){
+      settings.openGUI();
+      return;
+    }
+    // Fallback: helpful message if Vigilance integration not available
+    ChatLib.chat(withPrefix('GUI konnte nicht geöffnet werden. Versuche `/sl reloadgui` um die Einstellungen neu zu laden.','warning'));
+  }catch(e){
+    ChatLib.chat(withPrefix('Fehler beim Öffnen der GUI: ' + (e && e.message ? e.message : String(e)), 'warning'));
+  }
+}).setName('slconfig').setAliases('shitterlistconfig','slgui');
 register('command',()=>{ ChatLib.chat(withPrefix('Modul ist geladen und funktionsfähig!','success')); ChatLib.chat(withPrefix('Verwende /slconfig für Settings','info')); }).setName('sltest');
 
 // === Global Shitterlist color palette and helpers ===
