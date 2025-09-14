@@ -4,7 +4,7 @@ import { @Vigilant, @SwitchProperty, @SliderProperty, @TextProperty, @ButtonProp
 
 @Vigilant("Shitterlist", "Shitterlist Configuration", {
 	getCategoryComparator: () => (a, b) => {
-		const categories = ["General", "Warnings", "Sounds", "API", "Webhook", "Updater", "Advanced"];
+		const categories = ["General", "Warnings", "Sounds", "API", "Webhook", "Updater", "Advanced", "QoL"];
 		return categories.indexOf(a.name) - categories.indexOf(b.name);
 	}
 })
@@ -27,6 +27,8 @@ class Settings {
 	showJoinWarnings = true;
 	@SwitchProperty({ name: "Party Warnungen", description: "Warnt wenn ein Shitter der Party beitritt", category: "Warnings" })
 	partyWarnings = true;
+	@SwitchProperty({ name: "Bonzo Responder", description: "Automatisch 'Bonzo Procced' im Party-Chat senden, wenn Bonzo rettet", category: "QoL" })
+	bonzoResponder = true;
 	@SwitchProperty({ name: "Dungeon Warnungen", description: "Warnt wenn ein Shitter dem Dungeon-Team beitritt", category: "Warnings" })
 	dungeonWarnings = true;
 	@SwitchProperty({ name: "Title Warnungen", description: "Zeigt große Titel-Warnungen", category: "Warnings" })

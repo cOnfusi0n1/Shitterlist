@@ -7,12 +7,14 @@ const lastSeen = { ts: 0 };
 
 function now(){ return Date.now(); }
 
-// The exact message to watch for (without formatting codes)
-const TRIGGER = "Your ⚚ Bonzo's Mask saved your life!";
+// Regex trigger to watch for (without formatting codes).
+// Accepts small spacing variations and is case-insensitive.
+const TRIGGER_RE = /^Your\s+⚚\s*Bonzo's Mask\s+saved your life!?$/i;
 
 register('chat', (raw) => {
   try{
-    if(!settings || settings.enabled === false) return;
+  if(!settings || settings.enabled === false) return;
+  if(typeof settings.bonzoResponder !== 'undefined' && !settings.bonzoResponder) return;
     // Normalize text: strip formatting color codes
     let text = '';
     if(typeof raw === 'string') text = raw;
@@ -23,7 +25,7 @@ register('chat', (raw) => {
       }
     } else text = String(raw);
     const plain = text.replace(/§[0-9a-fk-or]/gi,'').trim();
-    if(plain !== TRIGGER) return;
+  if(!TRIGGER_RE.test(plain)) return;
     // Debounce identical triggers for 2s
     const nowTs = now();
     if(lastSeen.ts && (nowTs - lastSeen.ts) < 2000) return;
