@@ -111,6 +111,7 @@ class Settings {
 	checkUpdatesButton() { if (typeof triggerManualUpdateCheck === 'function') triggerManualUpdateCheck(); }
 	@ButtonProperty({ name: "Jetzt aktualisieren", description: "Force Update", category: "Updater" })
 	forceUpdateButton() { if (typeof performSelfUpdate === 'function') performSelfUpdate(true); }
+	constructor(){ this.initialize(this); }
 }
 
 export const settings = new Settings();
