@@ -32,6 +32,17 @@ register('chat', (raw) => {
     lastSeen.ts = nowTs;
     // Send party chat message
     safeCommand('pc Bonzo Procced');
+    // Show a title locally if enabled and not on cooldown
+    try{
+      if(typeof settings.showTitleWarning === 'undefined' || settings.showTitleWarning){
+        const cooldownSec = (settings && settings.warningCooldown) ? settings.warningCooldown : 0;
+        // reuse lastSeen.ts as simple local cooldown guard for titles as well
+        if(!lastSeen.titleTs || (Date.now() - lastSeen.titleTs) >= (cooldownSec*1000 || 2000)){
+          lastSeen.titleTs = Date.now();
+          try{ Client.showTitle('§aBonzo Procced', '§fBonzo on Cooldown!', 10, 80, 20); }catch(_){ }
+        }
+      }
+    }catch(_){ }
   }catch(e){ if(settings && settings.debugMode) ChatLib.chat('&c[bonzo] Error: ' + e); }
 }).setCriteria('${raw}');
 
