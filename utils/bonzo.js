@@ -39,7 +39,7 @@ register('chat', (raw) => {
         // reuse lastSeen.ts as simple local cooldown guard for titles as well
         if(!lastSeen.titleTs || (Date.now() - lastSeen.titleTs) >= (cooldownSec*1000 || 2000)){
           lastSeen.titleTs = Date.now();
-          try{ Client.showTitle('§aBonzo Procced', '§fBonzo on Cooldown!', 10, 80, 20); }catch(_){ }
+          try{ Client.showTitle('§cBonzo Procced', '§fBonzo on Cooldown!', 10, 80, 20); }catch(_){ }
         }
       }
     }catch(_){ }
