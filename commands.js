@@ -64,7 +64,7 @@ register('command', (...args)=>{
   if(!floor || /\s/.test(floor)) { slWarn('Erlaubte Floors: F1-F7 oder M1-M7'); return; }
   floor = String(floor).toUpperCase();
   if(!/^([FM][1-7])$/.test(floor)) { slWarn('Erlaubte Floors: F1-F7 oder M1-M7'); return; }
-      addShitter(name, reason, floor);
+  addShitter(name, reason, floor, Player.getName());
       break; }
   case 'remove': if(args.length<2){ slWarn('Usage: /sl remove <username>'); return; } removeShitter(args[1]); break;
   case 'check': if(args.length<2){ slWarn('Usage: /sl check <username>'); return;} const info=getActivePlayerList().find(p=>p.name.toLowerCase()===args[1].toLowerCase()); if(info){ slWarn(args[1] + ' ist ein Shitter'); slWarn('Grund: ' + (info.reason||'Unknown'));} else slSuccess(args[1] + ' ist nicht in der Liste'); break;
@@ -195,7 +195,7 @@ register('command', (...args)=>{
       const reason = lastRemovedReasons[lower] || 'Keine Angabe';
       // Temporarily suppress "add" webhook (affects API_ONLY path)
       const prev = settings.webhookSendAdds;
-      try { settings.webhookSendAdds = false; addShitter(name, reason); } finally { settings.webhookSendAdds = prev; }
+  try { settings.webhookSendAdds = false; addShitter(name, reason, undefined, Player.getName()); } finally { settings.webhookSendAdds = prev; }
   slSuccess('Wieder hinzugefügt: ' + name + ' (' + reason + ')');
       break;
     }

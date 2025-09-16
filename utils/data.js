@@ -32,7 +32,7 @@ function normName(n){ return settings.caseSensitive ? n : n.toLowerCase(); }
 export function apiAddShitterDirect(){ return null; }
 export function apiRemoveShitterDirect(){ return false; }
 
-export function addShitter(username, reason='Manual', floor){
+export function addShitter(username, reason='Manual', floor, addedBy){
   if(!username) return null;
   if(API_ONLY){
     const __g=(typeof globalThis!=='undefined')?globalThis:(typeof global!=='undefined'?global:this);
@@ -71,7 +71,17 @@ export function addShitter(username, reason='Manual', floor){
   const entry={ id:Math.random().toString(36).substring(2,11), name:cleaned, reason, floor, severity:1, category:'general', source:'local', dateAdded:Date.now(), updatedAt:Date.now() };
   shitterData.players.push(entry); saveData(); slSuccess('Hinzugefügt: ' + cleaned);
   // record add in history
-  try{ shitterData.history.push({ name: cleaned, action: 'add', reason: entry.reason, floor: entry.floor || null, date: Date.now(), id: entry.id }); saveData(); } catch(_){}
+  try{ shitterData.history.push({ name: cleaned, action: 'add', reason: entry.reason, floor: entry.floor || null, date: Date.now(), id: entry.id, addedBy: addedBy || null }); saveData(); } catch(_){ }
+  // Send webhook if enabled (use global sendWebhook if available to avoid cycles)
+  try{
+    const enabled = (settings && typeof settings.enableWebhook === 'boolean') ? settings.enableWebhook : true;
+    if(enabled && settings.webhookSendAdds){
+      const gw = (typeof globalThis !== 'undefined') ? globalThis : (typeof global !== 'undefined' ? global : this);
+      if(gw && typeof gw.sendWebhook === 'function'){
+        try{ gw.sendWebhook({ name: cleaned, reason: entry.reason, floor: entry.floor || null, action: 'add', addedBy: addedBy || null }); }catch(_){ }
+      }
+    }
+  }catch(_){ }
   try {
     const mins = (settings && typeof settings.testAutoRemoveMinutes==='number') ? settings.testAutoRemoveMinutes|0 : 0;
     if(mins>0 && reason && /test/i.test(String(reason))){

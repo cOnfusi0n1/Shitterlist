@@ -62,7 +62,12 @@ export function sendWebhook(content){
             // add timestamp and footer (footer can be overridden via content.footer)
             try{ embed.timestamp = (new Date()).toISOString(); }catch(_){ /* ignore if Date not supported */ }
             const footerText = (content && content.footer) ? String(content.footer) : 'Shitterlist';
-            embed.footer = { text: footerText };
+            // If an 'addedBy' is supplied, show it in the footer for quick reference
+            if(content && content.addedBy){
+              embed.footer = { text: `${footerText} • Hinzugefügt von: ${String(content.addedBy)}` };
+            } else {
+              embed.footer = { text: footerText };
+            }
             return { username: 'Shitterlist', embeds: [embed] };
           }
           // fallback: simple content string
