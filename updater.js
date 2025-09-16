@@ -6,8 +6,7 @@ const BASE='https://raw.githubusercontent.com/cOnfusi0n1/Shitterlist/main';
 // List of repo files to keep in sync (match current local structure)
 const FILES=[
 	'index.js','updater.js','maintenance.js','commands.js','settings.js','metadata.json',
-	'utils/core.js','utils/data.js','utils/api.js','utils/visual.js','utils/party.js','utils/events.js'
- 	,'utils/bonzo.js'
+	'utils/core.js','utils/data.js','utils/api.js','utils/visual.js','utils/party.js','utils/events.js','utils/bonzo.js'
 ];
 const META_FILE='metadata.json';
 let state={ lastCheck:0, checking:false };

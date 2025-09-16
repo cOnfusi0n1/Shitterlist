@@ -107,8 +107,16 @@ register('command', (...args)=>{
           else if(pl.reason){ const m = String(pl.reason).match(/\[(?:F|M)\d+\]$/i); if(m) floorLabel = m[0].replace(/[\[\]]/g,''); }
         } catch(_) {}
     // Suffix with reason (+ optional floor)
-    const suffix = floorLabel ? (' - ' + (pl.reason||'Keine Angabe') + ' [' + floorLabel + ']') : (' - ' + (pl.reason||'Keine Angabe'));
-  msg.addTextComponent(tc(THEME.dim + suffix));
+    if(floorLabel){
+      // separator
+      msg.addTextComponent(tc(THEME.dim + ' - '));
+      // reason
+      msg.addTextComponent(tc(THEME.info + (pl.reason||'Keine Angabe') + ' '));
+      // floor in accent color
+      msg.addTextComponent(tc(THEME.accent + '[' + floorLabel + ']'));
+    } else {
+      msg.addTextComponent(tc(THEME.dim + ' - ' + (pl.reason||'Keine Angabe')));
+    }
       });
 
       // Navigation (hover + click) appended to the same message so the whole block shares one ID
